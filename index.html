@@ -87,7 +87,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 .card-label { color: #5a5a88; font-size: 10px; letter-spacing: 3px; margin-bottom: 10px; }
 .card-top { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; }
-.hex-lines { display: flex; flex-direction: column-reverse; gap: 6px; align-items: center; }
+.hex-lines { display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .hex-line-row { display: flex; align-items: center; gap: 6px; }
 .change-label { font-size: 8px; width: 14px; text-align: right; color: #c8a96e; }
 .line-solid { height: 7px; background: #c0c0d0; border-radius: 2px; }
@@ -785,7 +785,7 @@ function renderHexLines(uid, lid, cl, dim) {
   // i=0=初爻, i=5=上爻; column-reverse讓i=0顯示在最下
   const lines = [...BAGUA[lid-1].lines, ...BAGUA[uid-1].lines];
   let html = '<div class="hex-lines">';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 5; i >= 0; i--) {
     const changing = !dim && cl && (i+1) === cl;
     const lineColor = changing ? 'changing' : (dim ? 'dim-line' : '');
     html += `<div class="hex-line-row">`;
