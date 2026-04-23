@@ -163,12 +163,14 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 </div>
 
 <script>
+// 先天八卦序：乾1 兌2 離3 震4 巽5 坎6 艮7 坤8
+// lines[0]=初爻(最下), lines[1]=二爻, lines[2]=三爻(最上), 陽=1 陰=0
 const BAGUA = [
   {id:1,name:"乾",lines:[1,1,1],element:"天"},
-  {id:2,name:"兌",lines:[1,1,0],element:"澤"},
+  {id:2,name:"兌",lines:[0,1,1],element:"澤"},
   {id:3,name:"離",lines:[1,0,1],element:"火"},
   {id:4,name:"震",lines:[0,0,1],element:"雷"},
-  {id:5,name:"巽",lines:[0,1,1],element:"風"},
+  {id:5,name:"巽",lines:[1,1,0],element:"風"},
   {id:6,name:"坎",lines:[0,1,0],element:"水"},
   {id:7,name:"艮",lines:[1,0,0],element:"山"},
   {id:8,name:"坤",lines:[0,0,0],element:"地"},
@@ -183,16 +185,25 @@ const SHICHEN = [
   {id:11,zhi:"戌",range:"19–21"},{id:12,zhi:"亥",range:"21–23"},
 ];
 
-const HEX_TABLE = [
-  ["乾為天","澤天夬","火天大有","雷天大壯","風天小畜","水天需","山天大畜","地天泰"],
-  ["天澤履","兌為澤","火澤睽","雷澤歸妹","風澤中孚","水澤節","山澤損","地澤臨"],
-  ["天火同人","澤火革","離為火","雷火豐","風火家人","水火既濟","山火賁","地火明夷"],
-  ["天雷無妄","澤雷隨","火雷噬嗑","震為雷","風雷益","水雷屯","山雷頤","地雷復"],
-  ["天風姤","澤風大過","火風鼎","雷風恆","巽為風","水風井","山風蠱","地風升"],
-  ["天水訟","澤水困","火水未濟","雷水解","風水渙","坎為水","山水蒙","地水師"],
-  ["天山遯","澤山咸","火山旅","雷山小過","風山漸","水山蹇","艮為山","地山謙"],
-  ["天地否","澤地萃","火地晉","雷地豫","風地觀","水地比","山地剝","坤為地"],
-];
+// HEX_MAP["上卦id,下卦id"] = 卦名  (上卦=外卦=卦名前半, 下卦=內卦=卦名後半)
+const HEX_MAP = {
+  "1,1":"乾為天",  "1,2":"天澤履",  "1,3":"天火同人","1,4":"天雷無妄",
+  "1,5":"天風姤",  "1,6":"天水訟",  "1,7":"天山遯",  "1,8":"天地否",
+  "2,1":"澤天夬",  "2,2":"兌為澤",  "2,3":"澤火革",  "2,4":"澤雷隨",
+  "2,5":"澤風大過","2,6":"澤水困",  "2,7":"澤山咸",  "2,8":"澤地萃",
+  "3,1":"火天大有","3,2":"火澤睽",  "3,3":"離為火",  "3,4":"火雷噬嗑",
+  "3,5":"火風鼎",  "3,6":"火水未濟","3,7":"火山旅",  "3,8":"火地晉",
+  "4,1":"雷天大壯","4,2":"雷澤歸妹","4,3":"雷火豐",  "4,4":"震為雷",
+  "4,5":"雷風恆",  "4,6":"雷水解",  "4,7":"雷山小過","4,8":"雷地豫",
+  "5,1":"風天小畜","5,2":"風澤中孚","5,3":"風火家人","5,4":"風雷益",
+  "5,5":"巽為風",  "5,6":"風水渙",  "5,7":"風山漸",  "5,8":"風地觀",
+  "6,1":"水天需",  "6,2":"水澤節",  "6,3":"水火既濟","6,4":"水雷屯",
+  "6,5":"水風井",  "6,6":"坎為水",  "6,7":"水山蹇",  "6,8":"水地比",
+  "7,1":"山天大畜","7,2":"山澤損",  "7,3":"山火賁",  "7,4":"山雷頤",
+  "7,5":"山風蠱",  "7,6":"山水蒙",  "7,7":"艮為山",  "7,8":"山地剝",
+  "8,1":"地天泰",  "8,2":"地澤臨",  "8,3":"地火明夷","8,4":"地雷復",
+  "8,5":"地風升",  "8,6":"地水師",  "8,7":"地山謙",  "8,8":"坤為地",
+};
 
 const DESC = {
 "乾為天":{kw:"剛健、進取、創造",s:"天行健，君子以自強不息。諸事積極進行，有開創之勢，宜主動出擊，但須防過剛則折。",yao:[
@@ -717,25 +728,28 @@ function upperGua(s) { const r = s % 8; return r === 0 ? 8 : r; }
 // 修正版：從上卦的下一個開始，數 eb 步
 function lowerGua(uid, eb) { return (uid + eb - 1) % 8 + 1; }
 function changingLine(s, eb) { const r = (s + eb) % 6; return r === 0 ? 6 : r; }
-function hexName(u, l) { return HEX_TABLE[u-1][l-1]; }
+function hexName(u, l) { return HEX_MAP[u+","+l]; }
 
 function applyChange(name, lineNum) {
-  for (let u=0;u<8;u++) for (let l=0;l<8;l++) {
-    if (HEX_TABLE[u][l] === name) {
-      const lines = [...BAGUA[l].lines, ...BAGUA[u].lines];
-      lines[lineNum-1] ^= 1;
-      const nl = BAGUA.find(g => g.lines.every((v,i) => v === lines[i]));
-      const nu = BAGUA.find(g => g.lines.every((v,i) => v === lines[i+3]));
-      if (nl && nu) return HEX_TABLE[nu.id-1][nl.id-1];
-    }
-  }
+  const entry = Object.entries(HEX_MAP).find(([k,v]) => v === name);
+  if (!entry) return null;
+  const [uid, lid] = entry[0].split(",").map(Number);
+  const lower = BAGUA[lid-1];
+  const upper = BAGUA[uid-1];
+  // 六爻從下到上: [下卦初,下卦二,下卦三, 上卦四,上卦五,上卦六]
+  // lineNum=1→index=0(初爻), lineNum=6→index=5(上爻)
+  const lines = [...lower.lines, ...upper.lines];
+  lines[lineNum-1] ^= 1;
+  const newLower = BAGUA.find(g => g.lines.every((v,i) => v === lines[i]));
+  const newUpper = BAGUA.find(g => g.lines.every((v,i) => v === lines[i+3]));
+  if (newLower && newUpper) return HEX_MAP[newUpper.id+","+newLower.id];
   return null;
 }
 
 function findGuaIds(name) {
-  for (let u=0;u<8;u++) for (let l=0;l<8;l++)
-    if (HEX_TABLE[u][l] === name) return [u+1, l+1];
-  return [1,1];
+  const entry = Object.entries(HEX_MAP).find(([k,v]) => v === name);
+  if (!entry) return [1,1];
+  return entry[0].split(",").map(Number);
 }
 
 // ── 初始化時辰按鈕 ────────────────────────────────────
@@ -767,6 +781,8 @@ function onStrokeInput() {
 }
 
 function renderHexLines(uid, lid, cl, dim) {
+  // 六爻從下到上: [下卦初,下卦二,下卦三, 上卦四,上卦五,上卦六]
+  // i=0=初爻, i=5=上爻; column-reverse讓i=0顯示在最下
   const lines = [...BAGUA[lid-1].lines, ...BAGUA[uid-1].lines];
   let html = '<div class="hex-lines">';
   for (let i = 0; i < 6; i++) {
@@ -851,7 +867,7 @@ function calculate() {
   const zhn = applyChange(hn, cl);
   const [zui, zli] = findGuaIds(zhn);
   const [fuu, ful] = findGuaIds(hn);
-  const lineYang = [...BAGUA[ful-1].lines, ...BAGUA[fuu-1].lines][cl-1] === 1;
+  const allLines = [...BAGUA[ful-1].lines, ...BAGUA[fuu-1].lines]; const lineYang = allLines[cl-1] === 1;
 
   const scName = SHICHEN[selectedSc-1].zhi;
 
